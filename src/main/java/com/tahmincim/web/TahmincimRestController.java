@@ -26,10 +26,10 @@ import com.tahmincim.model.tahminci.MatchInfo;
 import com.tahmincim.model.tahminci.Role;
 import com.tahmincim.model.tahminci.User;
 import com.tahmincim.model.tahminci.WeekInfo;
-import com.tahmincim.service.BetService;
-import com.tahmincim.service.MatchInfoService;
-import com.tahmincim.service.UserService;
-import com.tahmincim.service.WeekInfoService;
+import com.tahmincim.service.impl.BetService;
+import com.tahmincim.service.impl.MatchInfoService;
+import com.tahmincim.service.impl.UserService;
+import com.tahmincim.service.impl.WeekInfoService;
 
 @RestController
 @RequestMapping("/restapi")

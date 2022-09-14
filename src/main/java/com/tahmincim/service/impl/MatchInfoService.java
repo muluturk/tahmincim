@@ -1,4 +1,4 @@
-package com.tahmincim.service;
+package com.tahmincim.service.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
