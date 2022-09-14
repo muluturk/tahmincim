@@ -17,9 +17,11 @@ import com.tahmincim.model.tahminci.User;
 import com.tahmincim.model.tahminci.WeekInfo;
 import com.tahmincim.repository.BetRepository;
 import com.tahmincim.repository.MatchInfoRepository;
+import com.tahmincim.service.BetService;
+import com.tahmincim.service.UserService;
 
 @Service
-public class BetService {
+public class BetServiceImpl implements BetService {
 
 	@Autowired
 	private BetRepository repository;
@@ -30,6 +32,7 @@ public class BetService {
 	@Autowired
 	private UserService userService;
 
+	@Override
 	public List<BetDto> initializeBets(BigDecimal weekId, Boolean current, String username) {
 		List<BetDto> dtos = new ArrayList<BetDto>();
 
@@ -98,6 +101,7 @@ public class BetService {
 		return dto;
 	}
 
+	@Override
 	public boolean setBets(List<BetDto> dtos, String username) {
 
 		BigDecimal balance = BigDecimal.ZERO;

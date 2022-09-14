@@ -11,13 +11,15 @@ import com.tahmincim.model.dto.MatchInfoDto;
 import com.tahmincim.model.tahminci.MatchInfo;
 import com.tahmincim.model.tahminci.WeekInfo;
 import com.tahmincim.repository.MatchInfoRepository;
+import com.tahmincim.service.MatchInfoService;
 
 @Service
-public class MatchInfoService {
+public class MatchInfoServiceImpl implements MatchInfoService {
 
 	@Autowired
 	private MatchInfoRepository repository;
 
+	@Override
 	public void addMatches(List<MatchInfoDto> matchDtos) {
 		List<MatchInfo> matches = new ArrayList<MatchInfo>();
 		matchDtos.stream().forEach(match -> {
@@ -26,6 +28,7 @@ public class MatchInfoService {
 		repository.saveAll(matches);
 	}
 
+	@Override
 	public List<MatchInfoDto> getMatchInfos(BigDecimal weekId) {
 		List<MatchInfo> matchesOfWeek = repository.getAllMatchesOfWeek(weekId);
 		List<MatchInfoDto> dtos = new ArrayList<MatchInfoDto>();
@@ -37,6 +40,7 @@ public class MatchInfoService {
 		return dtos;
 	}
 	
+	@Override
 	public MatchInfoDto getUpcomingMatch() {
 		List<MatchInfo> upcomingMatches = repository.getUpcomingMatches();
 		

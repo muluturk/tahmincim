@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -28,9 +27,10 @@ import com.tahmincim.repository.MatchInfoRepository;
 import com.tahmincim.repository.UserPointRepository;
 import com.tahmincim.repository.UserProfileRepository;
 import com.tahmincim.repository.UserRepository;
+import com.tahmincim.service.UserService;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private UserRepository userRepository;
@@ -47,7 +47,7 @@ public class UserService implements UserDetailsService {
 	@Autowired
 	private UserProfileRepository profileRepository;
 	
-	Logger logger = LoggerFactory.getLogger(UserService.class);
+	Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -59,16 +59,19 @@ public class UserService implements UserDetailsService {
 		}
 	}
 	
+	@Override
 	public List<String> getUsers() {
 		List<String> users = new ArrayList<String>();
 		userRepository.findAll().forEach(user -> users.add(user.getUsername()));
 		return users;
 	}
 
+	@Override
 	public void addUser(User user) {
 		userRepository.save(user);
 	}
 
+	@Override
 	public BigDecimal getAvailableBalance(String username) {
 		BigDecimal availableBalance = pointRepository.getAvailableBalance(username);
 		if (availableBalance != null) {
@@ -78,6 +81,7 @@ public class UserService implements UserDetailsService {
 		return BigDecimal.ZERO;
 	}
 
+	@Override
 	public List<UserPointDto> getWeeklyScoreboard(BigDecimal weekId) {
 		List<UserPointDto> dtos = new ArrayList<UserPointDto>();
 		List<UserPoint> scoreboard = pointRepository.getWeeklyScoreboard(weekId);
@@ -85,6 +89,7 @@ public class UserService implements UserDetailsService {
 		return dtos;
 	}
 
+	@Override
 	public List<UserPointDto> getTotalScoreboard() {
 		List<UserProfile> profiles = profileRepository.getProfiles();
 		List<UserPointDto> dtos = new ArrayList<UserPointDto>();
@@ -93,10 +98,11 @@ public class UserService implements UserDetailsService {
 		return dtos;
 	}
 
+	@Override
 	public void calculateUserPoints(List<MatchInfoDto> matchDtos) {
 		List<MatchInfo> matches = new ArrayList<MatchInfo>();
 		matchDtos.stream().forEach(match -> {
-			matches.add(MatchInfoService.mapPojo(match));
+			matches.add(MatchInfoServiceImpl.mapPojo(match));
 		});
 		for (MatchInfo match : matches) {
 			BigDecimal countHitters = betRepository.getCountHitters(match.getResult(), match.getMatchId());
@@ -182,6 +188,7 @@ public class UserService implements UserDetailsService {
 		}
 	}
 
+	@Override
 	public void generateProfiles(WeekInfo week) {
 		List<UserPoint> points = pointRepository.getWeeklyScoreboard(week.getWeekId());
 		List<UserProfile> profiles = new ArrayList<UserProfile>();
