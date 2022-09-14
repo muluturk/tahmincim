@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BunuOyna</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script
+	src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+<script type="text/javascript" language="javascript">
+	$(document).ready(function() {
+		
+		var matchlist;
+		var aktifMac = 0;
+		
+		url = "http://193.46.198.72:8080/restapi/";
+		function get_score(kadi, sifre) {
+			$.ajax({
+				type : "POST",
+				url : url + "user/balance",
+				dataType : 'json',
+				headers : {
+					"Authorization" : "Basic " + btoa(kadi + ":" + sifre)
+				},
+				success : function(result) {
+					var puan = result + aktifMac;
+					console.log("aktifPuan:" + aktifMac);
+					$("#kullanici").text(kadi);
+					$("#puan").text(puan);
+					$("#kullPaneli").show();
+					$("#girisEkrani").hide();
+					
+					sessionStorage.setItem('kadi',kadi);
+					sessionStorage.setItem('sifre',sifre);
+
+				},
+				error : function(result) {
+					$("#hataPanel").show();
+				}
+			});
+		}
+		
+		function send_matches() {
+			var kadi = sessionStorage.kadi;
+			var sifre = sessionStorage.sifre;
+			
+			console.log(JSON.stringify(matchlist));
+			$("#macListesi").children(".satir").each(function(i, obj) {
+				$.each(matchlist, function(i, item) {
+					if (matchlist[i].matchId == $(obj).attr("id")) {
+						if ($(obj).find(".w3-red").hasClass("evsahibi")) {
+							matchlist[i].decision = 1;
+							matchlist[i].amount = $(obj).find(".miktar").val();
+						} else if ($(obj).find(".w3-red").hasClass("beraber")) {
+							matchlist[i].decision = 0;
+							matchlist[i].amount = $(obj).find(".miktar").val();
+						} else if ($(obj).find(".w3-red").hasClass("deplasman")) {
+							matchlist[i].decision = 2;
+							matchlist[i].amount = $(obj).find(".miktar").val();
+						} 
+					}
+				});
+			});
+			$.ajax({
+				type : "POST",
+				url : url + "user/bets",
+				dataType : 'text',
+				data : JSON.stringify(matchlist),
+				contentType: "application/json; charset=utf-8",
+				headers : {
+					"Authorization" : "Basic " + btoa(kadi + ":" + sifre)
+				},
+				success : function(result) {
+					alert("Maçlarınız başarılı bir şekilde gönderildi!");
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					alert("HATA! Lütfen daha sonra tekrar deneyiniz!");
+				}
+			});
+		};
+			
+
+						function get_weekly_scoreboard(kadi, sifre, closed) {
+							var sira = 1;
+							$.ajax({
+								type : "POST",
+								url : url + "user/scoreboard/weekly",
+								dataType : 'json',
+								headers : {
+									"Authorization" : "Basic "
+											+ btoa(kadi + ":" + sifre)
+								},
+								success : function(result) {
+									tablo = '<table id="haftalikTablo" class="display" style="width:100%">'
+										+ '<thead>'
+										+ '<tr><th></th><th>Kullanıcı</th><th>Puan</th><th>Hit</th></tr>'
+										+ '</thead>'
+										+ '<tbody>';
+									$.each(result,
+											function(i, item) {
+										tablo = tablo + "<tr>"
+										+ "<td>" + sira + "</td>"
+										+ "<td>" + result[i].username + "</td>"
+										+ "<td style='text-align: right;'>" + result[i].point + "</td>"
+										+ "<td style='text-align: right;'>" + result[i].totalHit + "</td>"
+										+ "</tr>";
+										
+										sira = sira + 1;
+												
+									});
+									
+									tablo = tablo + '</tbody>'
+									+ '<tfoot>'
+									+ '<tr><th></th><th>Kullanıcı</th><th>Puan</th><th>Hit</th></tr>'
+									+ '</tfoot>'
+									+ '</table>';
+									
+									$("#haftalikSkor")
+									.append(tablo);
+									
+									var table = $('#haftalikTablo').DataTable( {
+										"language":{
+											"url":"https://cdn.datatables.net/plug-ins/1.10.12/i18n/Turkish.json"
+										},
+										"paging":   false,
+										"info"	:	false
+								    } );
+									
+									table
+								    .column( '2:visible' )
+								    .order( 'desc' )
+								    .draw();
+								}
+							});
+						}
+						
+						function get_total_scoreboard(kadi, sifre, closed) {
+							var sira = 1;
+							$.ajax({
+								type : "POST",
+								url : url + "user/scoreboard/total",
+								dataType : 'json',
+								headers : {
+									"Authorization" : "Basic "
+											+ btoa(kadi + ":" + sifre)
+								},
+								success : function(result) {
+									tablo = '<table id="toplamTablo" class="display" style="width:100%">'
+										+ '<thead>'
+										+ '<tr><th></th><th>Kullanıcı</th><th>Toplam Puan</th><th> Toplam Hit</th></tr>'
+										+ '</thead>'
+										+ '<tbody>';
+									$.each(result,
+											function(i, item) {
+										tablo = tablo + "<tr>"
+										+ "<td>" + sira + "</td>"
+										+ "<td>" + result[i].username + "</td>"
+										+ "<td style='text-align: right;'>" + result[i].totalPoint + "</td>"
+										+ "<td style='text-align: right;'>" + result[i].totalHit + "</td>"
+										+ "</tr>";
+										
+										sira = sira + 1;
+												
+									});
+									
+									
+									
+									tablo = tablo + '</tbody>'
+									+ '<tfoot>'
+									+ '<tr><th></th><th>Kullanıcı</th><th>Toplam Puan</th><th> Toplam Hit</th></tr>'
+									+ '</tfoot>'
+									+ '</table>';
+									
+									$("#toplamSkor")
+									.append(tablo);
+									
+									var table = $('#toplamTablo').DataTable( {
+										"language":{
+											"url":"https://cdn.datatables.net/plug-ins/1.10.12/i18n/Turkish.json"
+										},
+										"paging":   false,
+										"info"	:	false
+								    } );
+									
+									
+									table
+								    .column( '2:visible' )
+								    .order( 'desc' )
+								    .draw();
+									
+								}
+							});
+						}
+						
+						function get_upcoming_match (kadi, sifre) {
+
+							$.ajax({
+								type : "POST",
+								url : url + "user/upcoming",
+								dataType : 'json',
+								headers : {
+									"Authorization" : "Basic "
+											+ btoa(kadi + ":" + sifre)
+								},
+								success : function(result) {
+									$("#sonrakiMac")
+									.append(result.matchName);
+									var teams = result.matchName.split("-");
+									var homeLogo = "logo/" + teams[0].trim().substring(0,3) + ".gif";
+									var awayLogo = "logo/" + teams[1].trim().substring(0,3) + ".gif";
+									var startDate = new Date(result.startDate);
+									$("#sonrakiMac")
+									.append('<div class="w3-container w3-cell"><img src="' + homeLogo +  '" alt="Ev Sahibi" style="width: 100%;"></div>'
+									+ '<div class="w3-container w3-cell">-</div>'
+									+ '<div class="w3-container w3-cell"><img src="' + awayLogo +  '" alt="Misafir" style="width: 100%;"></div>');
+									$("#sonrakiMac")
+									.append('<p>' + (startDate.getDate()<10?'0':'') + startDate.getDate() + "/" + (startDate.getMonth()<10?'0':'')  + (startDate.getMonth()+1) + "/" + startDate.getFullYear() + " " + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + '</p>');
+									$("#sonrakiMac")
+									.append('<p><button class="w3-button w3-block w3-theme-l4">Detaylı Bilgi</button></p>');
+								}
+							});
+						}
+
+						function get_matches(kadi, sifre, current) {
+							
+							$.ajax({
+										type : "POST",
+										url : url + "user/matchlist?current=" + current,
+										dataType : 'json',
+										async: false,
+										headers : {
+											"Authorization" : "Basic "
+													+ btoa(kadi + ":" + sifre)
+										},
+										success : function(result) {
+											
+											if (current) {
+											matchlist = result;
+											aktifMac = 0;											
+											$("#gonder").show();
+											$("#macListesi")
+											.append('<div class="w3-row-padding satir">' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:47%">MAÇ ADI</div>' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:39%">ORANLAR</div>' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:10%">Miktar</div>' +
+													'</div>');
+											$.each(result,
+															function(i, item) {
+
+																var renk0 = "w3-green", renk1 = "w3-green", renk2 = "w3-green", miktar, aktifMi = "";
+																var renk3 = "w3-light-gray", renk4 = "w3-light-gray", renk5 = "w3-light-gray";
+																if (result[i].decision == 1) {
+																	renk0 = "w3-green";
+																	renk1 = "w3-red";
+																	renk2 = "w3-green";
+																	renk4 = "w3-black";
+																	miktar = result[i].amount;
+																} else if (result[i].decision == 0) {
+																	renk0 = "w3-red";
+																	renk1 = "w3-green";
+																	renk2 = "w3-green";
+																	renk3 = "w3-black";
+																	miktar = result[i].amount;
+																} else if (result[i].decision == 2) {
+																	renk0 = "w3-green";
+																	renk1 = "w3-green";
+																	renk2 = "w3-red";
+																	renk5 = "w3-black";
+																	miktar = result[i].amount;
+																}
+																
+																
+																if (new Date(result[i].startDate) < new Date()) {
+																	renk0 = renk3;
+																	renk1 = renk4;
+																	renk2 = renk5;
+																	miktar = result[i].amount;
+																	aktifMi = "disabled";
+																} else {
+																	aktifMac = aktifMac + 1;
+																	console.log("aktif:" + aktifMac);
+																}
+																if (miktar == null) {
+																	miktar = result[i].minBet;
+																}
+
+																$("#macListesi")
+																		.append(
+																				'<div class="w3-row-padding satir" id="' + result[i].matchId + '"><div class="w3-col w3-section w3-cell-middle w3-center" style="width:47%">'
+																						+ result[i].matchName
+																						+ '</div><div class="w3-col w3-cell-middle" style="width:13%">'
+																						+ '<div>'
+																						+ '<button class="w3-button w3-block ' + renk1 + ' w3-section oran evsahibi"' + aktifMi + '>'
+																						+ result[i].homeOdd
+																						+ '</button>'
+																						+ '</div>'
+																						+ '</div><div class="w3-col" style="width:13%">'
+																						+ '<div>'
+																						+ '<button class="w3-button w3-block ' + renk0 + ' w3-section oran beraber" ' + aktifMi + '>'
+																						+ result[i].evenOdd
+																						+ '</button>'
+																						+ '</div>'
+																						+ '</div><div class="w3-col" style="width:13%">'
+																						+ '<div>'
+																						+ '<button class="w3-button w3-block ' + renk2 + ' w3-section oran deplasman" ' + aktifMi + '>'
+																						+ result[i].awayOdd
+																						+ '</button>'
+																						+ '</div>'
+																						+ '</div>'
+																						+ ' <div class="w3-col w3-section" style="width:10%"><input type="text"' + aktifMi + ' class="miktar" style="text-align:center" value="' + miktar + '" size="4"></input></div> '
+																						+ '</div></div>');
+
+															});
+											$(".oran")
+													.on(
+															"click",
+															function(event) {
+																$(this)
+																		.parent()
+																		.parent()
+																		.parent()
+																		.find(
+																				".oran")
+																		.removeClass(
+																				"w3-red")
+																		.addClass(
+																				"w3-green");
+																$(this)
+																		.removeClass(
+																				"w3-green")
+																		.addClass(
+																				"w3-red");
+															});
+										} else {
+											$("#gecenMacListesi")
+											.append('<div class="w3-row-padding satir">' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:43%">MAÇ ADI</div>' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:33%">ORANLAR</div>' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:10%">Miktar</div>' +
+													'<div class="w3-col w3-cell-middle w3-center w3-round w3-teal" style="width:10%">Sonuç</div>' +
+													'</div>');
+											$.each(result,
+															function(i, item) {
+
+																var renk0 = "w3-green", renk1 = "w3-green", renk2 = "w3-green", miktar, aktifMi = "";
+																if (result[i].decision == 1) {
+																	renk0 = "w3-green";
+																	renk1 = "w3-red";
+																	renk2 = "w3-green";
+																	miktar = result[i].amount;
+																} else if (result[i].decision == 0) {
+																	renk0 = "w3-red";
+																	renk1 = "w3-green";
+																	renk2 = "w3-green";
+																	miktar = result[i].amount;
+																} else if (result[i].decision == 2) {
+																	renk0 = "w3-green";
+																	renk1 = "w3-green";
+																	renk2 = "w3-red";
+																	miktar = result[i].amount;
+																}
+																
+
+																$("#gecenMacListesi")
+																		.append(
+																				'<div class="w3-row-padding satir" id="' + result[i].matchId + '"><div class="w3-col w3-section w3-cell-middle w3-center" style="width:43%">'
+																						+ result[i].matchName
+																						+ '</div><div class="w3-col w3-cell-middle" style="width:11%">'
+																						+ '<div>'
+																						+ '<div class="w3-center ' + renk1 + ' w3-section">'
+																						+ result[i].homeOdd
+																						+ '</div>'
+																						+ '</div>'
+																						+ '</div><div class="w3-col" style="width:11%">'
+																						+ '<div>'
+																						+ '<div class="w3-center ' + renk0 + ' w3-section">'
+																						+ result[i].evenOdd
+																						+ '</div>'
+																						+ '</div>'
+																						+ '</div><div class="w3-col" style="width:11%">'
+																						+ '<div>'
+																						+ '<div class="w3-center ' + renk2 + ' w3-section">'
+																						+ result[i].awayOdd
+																						+ '</div>'
+																						+ '</div>'
+																						+ '</div>'
+																						+ ' <div class="w3-col w3-section w3-center w3-blue" style="width:10%"><div>' + miktar + '</div></div>'
+																						+ ' <div class="w3-col w3-section w3-center w3-blue" style="width:10%"><div>' + (result[i].result == null ? '' : result[i].result)  + '</div></div>'																						
+																						+ '</div></div>');
+																$("#gecenMacListesi")
+																.append('<div class="w3-row-padding satir"><div class="w3-col w3-section w3-cell-middle w3-center" style="width:43%">Gerçekleşen Oran : '
+																		+ '<span class="w3-center w3-yellow">' + result[i].realOdd + '</span></div>'
+																		+ '<div class="w3-col w3-section w3-cell-middle w3-center" style="width:33%"> Tutturan: <span class="w3-center w3-yellow">' + result[i].hitters + '/'
+																		+ result[i].totalBets + '</span></div>'
+																		+ '<div class="w3-col w3-section w3-cell-middle w3-center" style="width:22%"> Net Kazanç: <span class="w3-center w3-yellow">' + result[i].point + ' </span></div></div></div>');
+
+															});
+											$(".oran")
+													.on(
+															"click",
+															function(event) {
+																$(this)
+																		.parent()
+																		.parent()
+																		.parent()
+																		.find(
+																				".oran")
+																		.removeClass(
+																				"w3-red")
+																		.addClass(
+																				"w3-green");
+																$(this)
+																		.removeClass(
+																				"w3-green")
+																		.addClass(
+																				"w3-red");
+															});
+										}
+										},
+										error : function(result) {
+											$("#hataPanel").show();
+										}
+									});
+						}
+						
+
+						$("#girisBtn").click(function(event) {
+							var kadi = $("#kadi").val();
+							var sifre = $("#sifre").val();
+							get_matches(kadi, sifre, false);
+							get_matches(kadi, sifre, true);
+							get_score(kadi, sifre);
+							get_upcoming_match(kadi, sifre);
+							get_weekly_scoreboard(kadi, sifre, false);
+							get_total_scoreboard(kadi, sifre, false);
+						});
+
+						$("#cikisBtn").click(function(event) {
+							sessionStorage.clear();
+							location.reload();
+						});
+
+						$("#gonder").click(function(event) {
+							send_matches();
+						});
+
+					});
+</script>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet"
+	href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+
+<link rel='stylesheet'
+	href='https://fonts.googleapis.com/css?family=Open+Sans'>
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+html, body, h1, h2, h3, h4, h5 {
+	font-family: "Open Sans", sans-serif
+}
+</style>
+<script data-ad-client="ca-pub-4094827444105581" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+</head>
+<body class="w3-theme-l5">
+
+	<!-- Navbar -->
+	<div class="w3-top">
+		<div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+			<a
+				class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-theme-d2"
+				href="javascript:void(0);" onclick="openNav()"><i
+				class="fa fa-bars"></i></a> <a href="index.html"
+				class="w3-bar-item w3-button w3-padding-large w3-theme-d4"><i
+				class="fa fa-home w3-margin-right"></i>BunuOyna</a>
+				
+		</div>
+	</div>
+
+	<!-- Page Container -->
+	<div class="w3-container w3-content"
+		style="max-width: 1400px; margin-top: 80px">
+		<!-- The Grid -->
+		<div class="w3-row">
+			<!-- Left Column -->
+			<div class="w3-col m3">
+				<!-- Profile -->
+				<div class="w3-card w3-round w3-white">
+					<div class="w3-container">
+						<h4 class="w3-center">Profilim</h4>
+						<div
+							class="w3-container w3-display-container w3-round w3-theme-l4 w3-border w3-theme-border w3-margin-bottom w3-hide-small"
+							style="display: none;" id="hataPanel">
+							<span onclick="this.parentElement.style.display='none'"
+								class="w3-button w3-theme-l3 w3-display-topright"> <i
+								class="fa fa-remove"></i>
+							</span>
+							<p>
+								<strong>Hatalı kullanıcı/şifre!</strong>
+							</p>
+						</div>
+						<div id="girisEkrani">
+							<table style="width: 100%;">
+								<tr>
+									<td>Kullanıcı Adı:</td>
+									<td><input type="text" id="kadi" name="kadi"></td>
+								</tr>
+								<tr>
+									<td>Şifre:</td>
+									<td><input type="password" id="sifre" name="sifre"></td>
+								</tr>
+								<tr>
+									<td></td>
+									<td class="w3-right-align"><button type="button"
+											class="w3-button w3-theme" id="girisBtn">
+											<i class="fa fa-sign-in"></i> Giriş
+										</button></td>
+								</tr>
+								<tr>
+									<td colspan="2" class="w3-right-align w3-small">
+										<a href="register.html">Yeni Üyelik</a>
+									</td>
+								</tr>
+							</table>
+						</div>
+						<div id="kullPaneli" style="display: none;">
+							<table style="width: 100%;">
+								<tr>
+									<td>Kullanıcı Adım:</td>
+									<td class="w3-right-align"><p id="kullanici"></p></td>
+								</tr>
+								<tr>
+									<td>Puanım:</td>
+									<td class="w3-right-align"><p id="puan"></p></td>
+								</tr>
+								<tr>
+									<td></td>
+									<td class="w3-right-align"><button type="button"
+											class="w3-button w3-theme" id="cikisBtn">
+											<i class="fa fa-sign-out"></i> Çıkış
+										</button></td>
+								</tr>
+								<tr>
+								<td>
+								<a href="user.html">Şifre Değiştir</a>
+								</td>
+								<td></td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="w3-card w3-round w3-white w3-center">
+					<div class="w3-container" id="slPuanTablosu">
+						<div class="w3-panel w3-theme-d2 w3-card-4">
+						<p>Süper Lig Puan Tablosu</p>
+						</div>
+					</div>
+					<div class="w3-center" style="padding-left: 20px">
+					<!-- BAŞLA: TRT Spor Sitene Ekle -->
+<div style="font: normal 11px Arial; width: 275px; border: solid 1px #ccc; background: #fff; border-radius: 3px; box-shadow: 1px 1px 3px #ccc;">
+        <a href="https://www.trtspor.com.tr/" target="_blank">
+            <img src="https://www.trtspor.com.tr/static/img/siteneEkle/logo_a.png" alt="TRT Spor Haberler" style="border: none 0;">
+        </a>
+    <iframe src="https://www.trtspor.com.tr/puandurumu-ekle/?lig=1&renk=a&resimler=1&a=9" width="270" height="522" frameborder="0"></iframe>
+    <div style="text-align: center;line-height: 23px;border-top: solid 1px #ccc; color: #666; margin-top: 5px;box-shadow: 0 -1px 3px #ccc;">
+        <a style="text-decoration: none;color: #666; font: normal 11px Arial;" href="https://www.trtspor.com.tr/puandurumu_ekle.html" target="_blank">Ayrıntılı Puan Tablosu</a>
+    </div>
+</div>
+<!-- BİTİŞ: TRT Spor Sitene Ekle -->
+					</div>
+				</div>
+
+
+				<!-- End Left Column -->
+			</div>
+
+			<!-- Middle Column -->
+			<div class="w3-col m7">
+
+
+				<div class="w3-row-padding">
+					<div class="w3-col m12">
+						<div class="w3-card w3-round w3-white">
+						
+							<div class="w3-bar w3-theme-d2">
+								<button class="w3-bar-item w3-button"
+									onclick="tabDegistir('macTab')">Maç Listesi</button>
+								<button class="w3-bar-item w3-button"
+									onclick="tabDegistir('skorTab')">Haftalık Puan Tablosu</button>
+								<button class="w3-bar-item w3-button"
+									onclick="tabDegistir('toplamSkorTab')">Toplam Puan Tablosu</button>
+								<button class="w3-bar-item w3-button"
+									onclick="tabDegistir('gecenHaftaTab')">Geçen Hafta</button>
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="macTab">
+								<h6 class="w3-opacity">Maç Listesi</h6>
+
+								<div id="macListesi"></div>
+
+								<button style="display: none;" type="button" class="w3-button w3-theme" id="gonder">
+									<i class="fa fa-pencil"></i> Gönder
+								</button>
+								
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="skorTab" style="display:none;">
+							<div class="w3-container" id="haftalikSkor">
+							<div class="w3-panel w3-theme-d2 w3-card-4">
+							<p>Haftalık Puan</p>
+							</div>
+				</div>
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="toplamSkorTab" style="display:none;">
+							<div class="w3-container" id="toplamSkor">
+							<div class="w3-panel w3-theme-d2 w3-card-4">
+							<p>Güncel Puan Tablosu</p>
+							</div>
+				</div>
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="gecenHaftaTab" style="display:none;">
+							<h6 class="w3-opacity">Geçen Hafta</h6>
+
+								<div id="gecenMacListesi"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				
+
+				<!-- End Middle Column -->
+			</div>
+
+			<!-- Right Column -->
+			<div class="w3-col m2">
+				<div class="w3-card w3-round w3-white w3-center">
+					<div class="w3-container" id="sonrakiMac">
+						<div class="w3-panel w3-theme-d2 w3-card-4">
+						<p>Sonraki Maç</p>
+						</div>
+					</div>
+				</div>
+				<div class="w3-card w3-round w3-white w3-center">
+					<div class="w3-container" id="haberler">
+						<div class="w3-panel w3-theme-d2 w3-card-4">
+						<p>TRT Spor</p>
+						</div>
+						<!-- BAŞLA: TRT Spor Sitene Ekle -->
+<div style="font: normal 9px Arial; width: 185px; border: solid 1px #ccc; background: #fff; border-radius: 3px; box-shadow: 1px 1px 3px #ccc;">
+        <a href="https://www.trtspor.com.tr/" target="_blank">
+            <img src="https://www.trtspor.com.tr/static/img/siteneEkle/logo_a.png" alt="TRT Spor Haberler" style="border: none 0;">
+        </a>
+    <iframe src="https://www.trtspor.com.tr/sitene-ekle/futbol-1/?haberSay=10&renk=a&resimler=0&a=8" width="185" height="432" frameborder="0"></iframe>
+    <div style="text-align: center;line-height: 23px;border-top: solid 1px #ccc; color: #666; margin-top: 5px;box-shadow: 0 -1px 3px #ccc;">
+        <a style="text-decoration: none;color: #666; font: normal 11px Arial;" href="https://www.trtspor.com.tr/">En Son Haberler</a> &nbsp;|&nbsp; <a style="text-decoration: none;color: #666; font: normal 11px Arial;" href="https://www.trtspor.com.tr/haber/futbol/">Futbol Haberleri</a>
+    </div>
+</div>
+<!-- BİTİŞ: TRT Spor Sitene Ekle -->
+						
+					</div>
+				</div>
+				<br>
+				<!-- End Right Column -->
+			</div>
+
+			<!-- End Grid -->
+		</div>
+
+		<!-- End Page Container -->
+	</div>
+	<br>
+
+	<!-- Footer -->
+	<footer class="w3-container w3-theme-d3 w3-padding-16">
+		<h5>Footer</h5>
+	</footer>
+
+	<footer class="w3-container w3-theme-d5">
+		<p>
+			Powered by <a href="https://www.w3schools.com/w3css/default.asp"
+				target="_blank">w3.css</a>
+		</p>
+	</footer>
+
+	<script>
+		// Accordion
+		function myFunction(id) {
+			var x = document.getElementById(id);
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+				x.previousElementSibling.className += " w3-theme-d1";
+			} else {
+				x.className = x.className.replace("w3-show", "");
+				x.previousElementSibling.className = x.previousElementSibling.className
+						.replace(" w3-theme-d1", "");
+			}
+		}
+
+		// Used to toggle the menu on smaller screens when clicking on the menu button
+		function openNav() {
+			var x = document.getElementById("navDemo");
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+			} else {
+				x.className = x.className.replace(" w3-show", "");
+			}
+		}
+		
+		function tabDegistir(tab) {
+			  var i;
+			  var x = document.getElementsByClassName("ortatab");
+			  for (i = 0; i < x.length; i++) {
+			    x[i].style.display = "none";
+			  }
+			  document.getElementById(tab).style.display = "block";
+			}
+	</script>
+
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<title>BunuOyna Yonet</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script
+	src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">	
+<script type="text/javascript" language="javascript">
+	$(document).ready(function() {
+		
+		var matchlist;
+		
+		url = "http://localhost:8080/restapi/";
+		
+		function create_user(kadi, password, refcode) {
+			console.log(kadi + ":" +  password);
+			$.ajax({
+						type : "POST",
+						url : url + "user/register?username=" + kadi + "&password=" + password + "&refCode=" + refcode,
+						dataType : 'text',
+						success : function(result) {
+							alert("Kullanıcı oluşturuldu! Anasayfaya yönlendiriliyorsunuz...");
+							
+							window.location.replace("index.html");
+						},
+						error : function(XMLHttpRequest, textStatus, errorThrown) {
+							alert(XMLHttpRequest.responseText);
+						}
+			});
+		}
+		function get_upcoming_match (kadi, sifre) {
+
+			$.ajax({
+				type : "POST",
+				url : url + "user/upcoming",
+				dataType : 'json',
+				success : function(result) {
+					$("#sonrakiMac")
+					.append(result.matchName);
+					var teams = result.matchName.split("-");
+					var homeLogo = "logo/" + teams[0].trim().substring(0,3) + ".gif";
+					var awayLogo = "logo/" + teams[1].trim().substring(0,3) + ".gif";
+					var startDate = new Date(result.startDate);
+					$("#sonrakiMac")
+					.append('<div class="w3-container w3-cell"><img src="' + homeLogo +  '" alt="Ev Sahibi" style="width: 100%;"></div>'
+					+ '<div class="w3-container w3-cell">-</div>'
+					+ '<div class="w3-container w3-cell"><img src="' + awayLogo +  '" alt="Misafir" style="width: 100%;"></div>');
+					$("#sonrakiMac")
+					.append('<p>' + (startDate.getDate()<10?'0':'') + startDate.getDate() + "/" + (startDate.getMonth()<10?'0':'')  + (startDate.getMonth()+1) + "/" + startDate.getFullYear() + " " + startDate.getHours() + ":" + (startDate.getMinutes()<10?'0':'') + startDate.getMinutes() + '</p>');
+					$("#sonrakiMac")
+					.append('<p><button class="w3-button w3-block w3-theme-l4">Detaylı Bilgi</button></p>');
+				}
+			});
+		}
+						var benihatirla = Cookies.get('benihatirla');
+						if (benihatirla == 'true') {
+							get_score(Cookies.get('kadi'), Cookies.get('sifre'));
+						}
+
+						$("#girisBtn").click(function(event) {
+							var kadi = $("#kadi").val();
+							var sifre = $("#sifre").val();
+							get_score(kadi, sifre);
+						});
+
+						$("#cikisBtn").click(function(event) {
+							Cookies.remove('benihatirla');
+							Cookies.remove('kadi');
+							Cookies.remove('sifre');
+							location.reload();
+						});
+
+						
+						$("#kullaniciOlustur").click(function(event) {
+							create_user($("#username").val(),$("#password").val(),$("#refcode").val());
+						});
+						
+
+					});
+</script>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet"
+	href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+
+<link rel='stylesheet'
+	href='https://fonts.googleapis.com/css?family=Open+Sans'>
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+html, body, h1, h2, h3, h4, h5 {
+	font-family: "Open Sans", sans-serif
+}
+</style>
+<body class="w3-theme-l5">
+
+	<!-- Navbar -->
+	<div class="w3-top">
+		<div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+			<a
+				class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-theme-d2"
+				href="javascript:void(0);" onclick="openNav()"><i
+				class="fa fa-bars"></i></a> <a href="index.html"
+				class="w3-bar-item w3-button w3-padding-large w3-theme-d4"><i
+				class="fa fa-home w3-margin-right"></i>BunuOyna</a>
+				
+		</div>
+	</div>
+
+	<!-- Page Container -->
+	<div class="w3-container w3-content"
+		style="max-width: 1400px; margin-top: 80px">
+		<!-- The Grid -->
+		<div class="w3-row">
+			<!-- Left Column -->
+			<div class="w3-col m3">
+				<!-- Profile -->
+				<div class="w3-card w3-round w3-white">
+					<div class="w3-container">
+						<h4 class="w3-center">Profilim</h4>
+						<div
+							class="w3-container w3-display-container w3-round w3-theme-l4 w3-border w3-theme-border w3-margin-bottom w3-hide-small"
+							style="display: none;" id="hataPanel">
+							<span onclick="this.parentElement.style.display='none'"
+								class="w3-button w3-theme-l3 w3-display-topright"> <i
+								class="fa fa-remove"></i>
+							</span>
+							<p>
+								<strong>Hatalı kullanıcı/şifre!</strong>
+							</p>
+						</div>
+						<div id="girisEkrani">
+							<table style="width: 100%;">
+								<tr>
+									<td>Kullanıcı Adı:</td>
+									<td><input type="text" id="kadi" name="kadi"></td>
+								</tr>
+								<tr>
+									<td>Şifre:</td>
+									<td><input type="password" id="sifre" name="sifre"></td>
+								</tr>
+								<tr>
+									<td colspan="2" class="w3-right-align w3-small"><input
+										type="checkbox" id="benihatirla"> Beni Hatırla</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td class="w3-right-align"><button type="button"
+											class="w3-button w3-theme" id="girisBtn">
+											<i class="fa fa-sign-in"></i> Giriş
+										</button></td>
+								</tr>
+							</table>
+						</div>
+						<div id="kullPaneli" style="display: none;">
+							<table style="width: 100%;">
+								<tr>
+									<td>Kullanıcı Adım:</td>
+									<td class="w3-right-align"><p id="kullanici"></p></td>
+								</tr>
+								<tr>
+									<td>Puanım:</td>
+									<td class="w3-right-align"><p id="puan"></p></td>
+								</tr>
+								<tr>
+									<td></td>
+									<td class="w3-right-align"><button type="button"
+											class="w3-button w3-theme" id="cikisBtn">
+											<i class="fa fa-sign-out"></i> Çıkış
+										</button></td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+				<br>
+
+
+				<!-- End Left Column -->
+			</div>
+
+			<!-- Middle Column -->
+			<div class="w3-col m7">
+
+
+				<div class="w3-row-padding">
+					<div class="w3-col m12">
+						<div class="w3-card w3-round w3-white">
+
+							
+							<div class="w3-container w3-padding ortatab" id ="userTab">
+							<div class="w3-row">
+							<div class="w3-col w3-section" style="width:20%">Kullanıcı :</div>
+							<div class="w3-col w3-section" style="width:20%"><input type="text" id="username" /></div>
+							</div><div class="w3-row">
+							<div class="w3-col w3-section" style="width:20%">Şifre : </div>
+							<div class="w3-col w3-section" style="width:20%"><input type="text" id="password" /></div>
+							</div>
+							<div class="w3-col w3-section" style="width:20%">Referans Kodu : </div>
+							<div class="w3-col w3-section" style="width:20%"><input type="text" id="refcode" /></div>
+							</div>
+							<button type="button" class="w3-button w3-theme" id="kullaniciOlustur">
+									<i class="fa fa-pencil"></i> Oluştur
+								</button>
+								
+							</div>
+						</div>
+					</div>
+				</div>
+
+				
+
+				<!-- End Middle Column -->
+			</div>
+
+			<!-- Right Column -->
+			<div class="w3-col m2">
+				<div class="w3-card w3-round w3-white w3-center">
+					<div class="w3-container" id="sonrakiMac">
+						<div class="w3-panel w3-theme-d2 w3-card-4">
+						<p>Sonraki Maç</p>
+						</div>
+					</div>
+				</div>
+				<br>
+				<!-- End Right Column -->
+			</div>
+
+				<!-- End Right Column -->
+			</div>
+
+			<!-- End Grid -->
+		</div>
+
+		<!-- End Page Container -->
+	</div>
+	<br>
+
+	<!-- Footer -->
+	<footer class="w3-container w3-theme-d3 w3-padding-16">
+		<h5>Footer</h5>
+	</footer>
+
+	<footer class="w3-container w3-theme-d5">
+		<p>
+			Powered by <a href="https://www.w3schools.com/w3css/default.asp"
+				target="_blank">w3.css</a>
+		</p>
+	</footer>
+
+	<script>
+		// Accordion
+		function myFunction(id) {
+			var x = document.getElementById(id);
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+				x.previousElementSibling.className += " w3-theme-d1";
+			} else {
+				x.className = x.className.replace("w3-show", "");
+				x.previousElementSibling.className = x.previousElementSibling.className
+						.replace(" w3-theme-d1", "");
+			}
+		}
+
+		// Used to toggle the menu on smaller screens when clicking on the menu button
+		function openNav() {
+			var x = document.getElementById("navDemo");
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+			} else {
+				x.className = x.className.replace(" w3-show", "");
+			}
+		}
+		
+		function tabDegistir(tab) {
+			  var i;
+			  var x = document.getElementsByClassName("ortatab");
+			  for (i = 0; i < x.length; i++) {
+			    x[i].style.display = "none";
+			  }
+			  document.getElementById(tab).style.display = "block";
+			}
+	</script>
+
+</body>
+</html>

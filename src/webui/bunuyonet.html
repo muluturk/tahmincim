@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<title>BunuOyna Yonet</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script
+	src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">	
+<script type="text/javascript" language="javascript">
+	$(document).ready(function() {
+		
+		var matchlist;
+		
+		url = "http://localhost:8080/restapi/";
+		function get_score(kadi, sifre) {
+			$.ajax({
+				type : "POST",
+				url : url + "user/balance",
+				dataType : 'json',
+				headers : {
+					"Authorization" : "Basic " + btoa(kadi + ":" + sifre)
+				},
+				success : function(result) {
+					$("#kullanici").text(kadi);
+					$("#puan").text(result);
+					$("#kullPaneli").show();
+					$("#girisEkrani").hide();
+
+					if ($("#benihatirla").is(':checked')) {
+						Cookies.set('kadi', kadi, 14);
+						Cookies.set('sifre', sifre, 14);
+						Cookies.set('benihatirla', 'true', 14);
+					}
+				},
+				error : function(result) {
+					$("#hataPanel").show();
+				}
+			});
+		}
+		function create_user(kadi,sifre,username, password, admin) {
+			console.log(kadi + ":" +  sifre);
+			$.ajax({
+						type : "POST",
+						url : url + "admin/adduser?isAdmin=" + admin + "&username=" + username + "&password=" + password,
+						dataType : 'text',
+						headers : {
+							"Authorization" : "Basic "
+									+ btoa(kadi + ":" + sifre)
+						},
+						success : function(result) {
+							alert("Kullanıcı oluşturuldu.");
+							get_users();
+						},
+						error : function(XMLHttpRequest, textStatus, errorThrown) {
+							alert("HATA! Lütfen daha sonra tekrar deneyiniz!");
+						}
+			});
+		}
+		
+		function get_users(kadi,sifre) {
+			
+			$.ajax({
+						type : "POST",
+						url : url + "admin/users",
+						dataType : 'json',
+						headers : {
+							"Authorization" : "Basic "
+									+ btoa(kadi + ":" + sifre)
+						},
+						success : function(result) {
+							$("#kullaniciListe").html("");
+							$.each(result,
+									function(i, item) {
+								$("#kullaniciListe").append("<p>" + item + "</p>");
+							});
+							
+							
+						}
+			});
+		}
+		
+		function send_matches() {
+			var kadi = Cookies.get('kadi');
+			var sifre = Cookies.get('sifre');
+			console.log(JSON.stringify(matchlist));
+			$("#macListesi").children(".satir").each(function(i, obj) {
+				$.each(matchlist, function(i, item) {
+					if (matchlist[i].matchId == $(obj).attr("id")) {
+						matchlist[i].matchName = $(obj).find(".matchname").val();
+						matchlist[i].homeOdd = $(obj).find(".yenioran1").val();
+						matchlist[i].evenOdd = $(obj).find(".yenioran0").val();
+						matchlist[i].awayOdd = $(obj).find(".yenioran2").val();
+						matchlist[i].result = $(obj).find(".sonuc").val();					}
+				});
+			});
+			console.log(JSON.stringify(matchlist));
+			console.log(kadi);
+			$.ajax({
+				type : "POST",
+				url : url + "admin/updatematchinfos",
+				dataType : 'text',
+				data : JSON.stringify(matchlist),
+				contentType: "application/json; charset=utf-8",
+				headers : {
+					"Authorization" : "Basic " + btoa(kadi + ":" + sifre)
+				},
+				success : function(result) {
+					alert("Maçlarınız başarılı bir şekilde gönderildi!");
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					alert("HATA! Lütfen daha sonra tekrar deneyiniz!");
+				}
+			});
+		};
+			
+
+						function get_weekly_scoreboard(kadi, sifre, closed) {
+
+							$.ajax({
+								type : "POST",
+								url : url + "user/scoreboard/weekly",
+								dataType : 'json',
+								headers : {
+									"Authorization" : "Basic "
+											+ btoa(kadi + ":" + sifre)
+								},
+								success : function(result) {
+									console.log(result[0]);
+								}
+							});
+						}
+						
+						function create_week() {
+							var kadi = Cookies.get('kadi');
+							var sifre = Cookies.get('sifre');
+							var params = {};
+							params.weekId = parseFloat($("#yenihafta").val());
+							$.ajax({
+								type : "POST",
+								url : url + "admin/loadmatches",
+								data : JSON.stringify(params),
+								dataType : 'json',
+								contentType: "application/json; charset=utf-8",
+								headers : {
+									"Authorization" : "Basic "
+											+ btoa(kadi + ":" + sifre)
+								},
+								success : function(result) {
+									console.log(result[0]);
+								}
+							});
+						}
+						
+						function get_weeks(kadi, sifre) {
+							$.ajax({
+								type : "POST",
+								url : url + "admin/weeks",
+								dataType : 'json',
+								headers : {
+									"Authorization" : "Basic "
+											+ btoa(kadi + ":" + sifre)
+								},
+								success : function(result) {
+									$.each(result,
+											function(i, item) {
+										$("#haftaSelect").append("<option value='"
+												+ item + "'>" + item + "</option>");
+										$("#yenihafta").val(item+1);
+									});
+								}
+							});
+							
+						}
+
+						function get_matches() {
+							$("#macListesi").empty();
+							var kadi = Cookies.get('kadi');
+							var sifre = Cookies.get('sifre');
+							
+							var params = {};
+							params.weekId = parseFloat($("#haftaSelect").children("option:selected").val());
+							$.ajax({
+										type : "POST",
+										url : url + "admin/matchinfos",
+										dataType : 'json',
+										data : JSON.stringify(params),
+										contentType: "application/json; charset=utf-8",
+										headers : {
+											"Authorization" : "Basic "
+						
+											 + btoa(kadi + ":" + sifre)
+										},
+										success : function(result) {
+											matchlist = result;
+											$("#gonder").show();
+											$.each(result,
+															function(i, item) {
+																$("#macListesi")
+																		.append(
+																				'<div class="w3-row-padding satir" id="' + result[i].matchId + '"><div class="w3-col w3-section w3-cell-middle" style="width:40%">'
+																						+ '<input type="text" class="matchname" style="text-align:center" value="'
+																						+ result[i].matchName
+																						+ '"></input></div>'
+																						+ ' <div class="w3-col w3-section" style="width:10%"><input type="text" class="yenioran1" style="text-align:center" value="' + result[i].homeOdd + '" size="4"></input></div> '
+																						+ ' <div class="w3-col w3-section" style="width:10%"><input type="text" class="yenioran0" style="text-align:center" value="' + result[i].evenOdd + '" size="4"></input></div> '
+																						+ ' <div class="w3-col w3-section" style="width:10%"><input type="text" class="yenioran2" style="text-align:center" value="' + result[i].awayOdd + '" size="4"></input></div> '
+																						+ ' <div class="w3-col w3-section" style="width:10%"><input type="text" class="sonuc" style="text-align:center" value="' + result[i].result + '" size="4"></input></div> '
+
+																						+ '</div></div>');
+
+															});
+										},
+										error : function(result) {
+											$("#hataPanel").show();
+										}
+									});
+						}
+						var benihatirla = Cookies.get('benihatirla');
+						if (benihatirla == 'true') {
+							get_score(Cookies.get('kadi'), Cookies.get('sifre'));
+							get_weeks(Cookies.get('kadi'), Cookies
+									.get('sifre'), false);
+							get_weekly_scoreboard(Cookies.get('kadi'), Cookies
+									.get('sifre'), false);
+							get_users(Cookies.get('kadi'), Cookies.get('sifre'));
+						}
+
+						$("#girisBtn").click(function(event) {
+							var kadi = $("#kadi").val();
+							var sifre = $("#sifre").val();
+							get_score(kadi, sifre);
+							get_weeks(kadi, sifre);
+							get_weekly_scoreboard(kadi, sifre, false);
+							get_users(kadi, sifre);
+						});
+
+						$("#cikisBtn").click(function(event) {
+							Cookies.remove('benihatirla');
+							Cookies.remove('kadi');
+							Cookies.remove('sifre');
+							location.reload();
+						});
+
+						$("#gonder").click(function(event) {
+							send_matches();
+						});
+						
+						$("#yeniHaftaOlustur").click(function(event) {
+							create_week();
+						});
+						
+						$("#kullaniciOlustur").click(function(event) {
+							create_user(Cookies.get('kadi'), Cookies.get('sifre'),$("#username").val(),$("#password").val(),$("#isAdmin").val());
+						});
+						
+						$("#haftaSelect").change(function(event) {
+							var kadi = $("#kadi").val();
+							var sifre = $("#sifre").val();
+							get_matches();
+						});
+
+					});
+</script>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet"
+	href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+
+<link rel='stylesheet'
+	href='https://fonts.googleapis.com/css?family=Open+Sans'>
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+html, body, h1, h2, h3, h4, h5 {
+	font-family: "Open Sans", sans-serif
+}
+</style>
+<body class="w3-theme-l5">
+
+	<!-- Navbar -->
+	<div class="w3-top">
+		<div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+			<a
+				class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-theme-d2"
+				href="javascript:void(0);" onclick="openNav()"><i
+				class="fa fa-bars"></i></a> <a href="index.html"
+				class="w3-bar-item w3-button w3-padding-large w3-theme-d4"><i
+				class="fa fa-home w3-margin-right"></i>BunuOyna</a>
+				
+		</div>
+	</div>
+
+	<!-- Page Container -->
+	<div class="w3-container w3-content"
+		style="max-width: 1400px; margin-top: 80px">
+		<!-- The Grid -->
+		<div class="w3-row">
+			<!-- Left Column -->
+			<div class="w3-col m3">
+				<!-- Profile -->
+				<div class="w3-card w3-round w3-white">
+					<div class="w3-container">
+						<h4 class="w3-center">Profilim</h4>
+						<div
+							class="w3-container w3-display-container w3-round w3-theme-l4 w3-border w3-theme-border w3-margin-bottom w3-hide-small"
+							style="display: none;" id="hataPanel">
+							<span onclick="this.parentElement.style.display='none'"
+								class="w3-button w3-theme-l3 w3-display-topright"> <i
+								class="fa fa-remove"></i>
+							</span>
+							<p>
+								<strong>Hatalı kullanıcı/şifre!</strong>
+							</p>
+						</div>
+						<div id="girisEkrani">
+							<table style="width: 100%;">
+								<tr>
+									<td>Kullanıcı Adı:</td>
+									<td><input type="text" id="kadi" name="kadi"></td>
+								</tr>
+								<tr>
+									<td>Şifre:</td>
+									<td><input type="password" id="sifre" name="sifre"></td>
+								</tr>
+								<tr>
+									<td colspan="2" class="w3-right-align w3-small"><input
+										type="checkbox" id="benihatirla"> Beni Hatırla</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td class="w3-right-align"><button type="button"
+											class="w3-button w3-theme" id="girisBtn">
+											<i class="fa fa-sign-in"></i> Giriş
+										</button></td>
+								</tr>
+							</table>
+						</div>
+						<div id="kullPaneli" style="display: none;">
+							<table style="width: 100%;">
+								<tr>
+									<td>Kullanıcı Adım:</td>
+									<td class="w3-right-align"><p id="kullanici"></p></td>
+								</tr>
+								<tr>
+									<td>Puanım:</td>
+									<td class="w3-right-align"><p id="puan"></p></td>
+								</tr>
+								<tr>
+									<td></td>
+									<td class="w3-right-align"><button type="button"
+											class="w3-button w3-theme" id="cikisBtn">
+											<i class="fa fa-sign-out"></i> Çıkış
+										</button></td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+				<br>
+
+
+				<!-- End Left Column -->
+			</div>
+
+			<!-- Middle Column -->
+			<div class="w3-col m7">
+
+
+				<div class="w3-row-padding">
+					<div class="w3-col m12">
+						<div class="w3-card w3-round w3-white">
+
+							<div class="w3-bar w3-theme-d2">
+								<button class="w3-bar-item w3-button"
+									onclick="tabDegistir('macTab')">Maç Listesi</button>
+						        <button class="w3-bar-item w3-button"
+									onclick="tabDegistir('yeniHaftaTab')">Yeni Hafta Oluştur</button>
+								<button class="w3-bar-item w3-button"
+									onclick="tabDegistir('skorTab')">Haftalık Puan Tablosu</button>
+							    <button class="w3-bar-item w3-button"
+									onclick="tabDegistir('userTab')">Kullanıcı Ekle</button>
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="macTab">
+								<h6 class="w3-opacity">Maç Listesi</h6>
+								<div id="haftalar">
+								<select class="w3-select" name="hafta" id="haftaSelect">
+									<option value="" disabled selected>Hafta Seç...</option>
+								</select>
+								</div>
+								<div id="macListesi"></div>
+
+								<button style="display: none;" type="button" class="w3-button w3-theme" id="gonder">
+									<i class="fa fa-pencil"></i> Gönder
+								</button>
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="yeniHaftaTab" style="display:none;">
+							Yeni Hafta: <input type="text" id="yenihafta" style="text-align:center" value=""></input>
+							
+							<button type="button" class="w3-button w3-theme" id="yeniHaftaOlustur">
+									<i class="fa fa-pencil"></i> Oluştur
+								</button>
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="skorTab" style="display:none;">
+							Skor
+							</div>
+							<div class="w3-container w3-padding ortatab" id ="userTab" style="display:none;">
+							<div class="w3-row">
+							<div class="w3-col w3-section" style="width:20%">Kullanıcı :</div>
+							<div class="w3-col w3-section" style="width:20%"><input type="text" id="username" /></div>
+							</div><div class="w3-row">
+							<div class="w3-col w3-section" style="width:20%">Şifre : </div>
+							<div class="w3-col w3-section" style="width:20%"><input type="text" id="password" /></div>
+							</div><div class="w3-row">
+							<div class="w3-col w3-section" style="width:20%">Admin mi : </div>
+							<div class="w3-col w3-section" style="width:20%"><input type="text" id="isAdmin" value="false" /></div>
+							</div>
+							<button type="button" class="w3-button w3-theme" id="kullaniciOlustur">
+									<i class="fa fa-pencil"></i> Oluştur
+								</button>
+								<div class="w3-panel w3-theme-d2 w3-card-4">
+						<p>Kullanıcı Listesi</p>
+						</div>
+							<div id="kullaniciListe"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				
+
+				<!-- End Middle Column -->
+			</div>
+
+			<!-- Right Column -->
+			<div class="w3-col m2">
+				<div class="w3-card w3-round w3-white w3-center">
+					<div class="w3-container">
+						<p>Upcoming Events:</p>
+						<img src="/w3images/forest.jpg" alt="Forest" style="width: 100%;">
+						<p>
+							<strong>Holiday</strong>
+						</p>
+						<p>Friday 15:00</p>
+						<p>
+							<button class="w3-button w3-block w3-theme-l4">Info</button>
+						</p>
+					</div>
+				</div>
+				<br>
+
+				<div class="w3-card w3-round w3-white w3-center">
+					<div class="w3-container">
+						<p>Friend Request</p>
+						<img src="/w3images/avatar6.png" alt="Avatar" style="width: 50%"><br>
+						<span>Jane Doe</span>
+						<div class="w3-row w3-opacity">
+							<div class="w3-half">
+								<button class="w3-button w3-block w3-green w3-section"
+									title="Accept">
+									<i class="fa fa-check"></i>
+								</button>
+							</div>
+							<div class="w3-half">
+								<button class="w3-button w3-block w3-red w3-section"
+									title="Decline">
+									<i class="fa fa-remove"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<br>
+
+				<div class="w3-card w3-round w3-white w3-padding-16 w3-center">
+					<p>ADS</p>
+				</div>
+				<br>
+
+				<div class="w3-card w3-round w3-white w3-padding-32 w3-center">
+					<p>
+						<i class="fa fa-bug w3-xxlarge"></i>
+					</p>
+				</div>
+
+				<!-- End Right Column -->
+			</div>
+
+			<!-- End Grid -->
+		</div>
+
+		<!-- End Page Container -->
+	</div>
+	<br>
+
+	<!-- Footer -->
+	<footer class="w3-container w3-theme-d3 w3-padding-16">
+		<h5>Footer</h5>
+	</footer>
+
+	<footer class="w3-container w3-theme-d5">
+		<p>
+			Powered by <a href="https://www.w3schools.com/w3css/default.asp"
+				target="_blank">w3.css</a>
+		</p>
+	</footer>
+
+	<script>
+		// Accordion
+		function myFunction(id) {
+			var x = document.getElementById(id);
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+				x.previousElementSibling.className += " w3-theme-d1";
+			} else {
+				x.className = x.className.replace("w3-show", "");
+				x.previousElementSibling.className = x.previousElementSibling.className
+						.replace(" w3-theme-d1", "");
+			}
+		}
+
+		// Used to toggle the menu on smaller screens when clicking on the menu button
+		function openNav() {
+			var x = document.getElementById("navDemo");
+			if (x.className.indexOf("w3-show") == -1) {
+				x.className += " w3-show";
+			} else {
+				x.className = x.className.replace(" w3-show", "");
+			}
+		}
+		
+		function tabDegistir(tab) {
+			  var i;
+			  var x = document.getElementsByClassName("ortatab");
+			  for (i = 0; i < x.length; i++) {
+			    x[i].style.display = "none";
+			  }
+			  document.getElementById(tab).style.display = "block";
+			}
+	</script>
+
+</body>
+</html>
